@@ -1,0 +1,179 @@
+name: release
+
+env:
+  PROJECT_NAME: qdl
+  REPO_NAME: linux-msm/qdl
+  REPO_REF: 672abb1e81cc630640f2a88e42b6dfd2a429ad14
+  DIST_DIR: dist
+  ARTIFACT_NAME: dist
+
+on:
+  push:
+    tags:
+      - '*.*.*'
+
+jobs:
+  build:
+    name: build (${{ matrix.config.os }}, ${{ matrix.config.arch }})
+    runs-on:
+      ubuntu-latest
+    permissions:
+      contents: read 
+    strategy:
+      matrix:
+        config:
+          - os: Linux
+            arch: 64bit
+            cross_compile: x86_64-ubuntu16.04-linux-gnu
+          - os: Linux
+            arch: 32bit
+            cross_compile: i686-ubuntu16.04-linux-gnu
+          - os: Linux
+            arch: ARMv6
+            cross_compile: arm-linux-gnueabihf
+          - os: Linux
+            arch: ARM64
+            cross_compile: aarch64-linux-gnu
+          - os: macOS
+            arch: 64bit
+            cross_compile: x86_64-apple-darwin13
+          - os: Windows
+            arch: 32bit
+            cross_compile: i686-w64-mingw32
+            extension: .exe
+
+    container:
+      image: ghcr.io/arduino/crossbuild:0.3.0-pre.1
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        path: packing
+
+    - name: Checkout linux-msm/qdl repository
+      uses: actions/checkout@v4
+      with:
+        repository: ${{ env.REPO_NAME }}
+        ref: ${{ env.REPO_REF }}
+        path: ${{ env.PROJECT_NAME }}
+
+    - name: Apply patches
+      working-directory: ${{ env.PROJECT_NAME }}
+      run: git apply -v ../packing/patches/*.patch
+
+    - name: Build
+      working-directory: ${{ env.PROJECT_NAME }}
+      run: /configure_toolchain.sh make -j$(nproc)
+      env:
+        CROSS_COMPILE: ${{ matrix.config.cross_compile }}
+
+    - name: Package
+      working-directory: ${{ env.PROJECT_NAME }}
+      run: | 
+        tar -czvf ../${{ env.PROJECT_NAME }}_${{ github.ref_name }}_${{ matrix.config.os }}_${{ matrix.config.arch }}.tar.gz \
+                  qdl${{ matrix.config.extension }}
+
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        if-no-files-found: error
+        name: ${{ env.ARTIFACT_NAME }}_${{ matrix.config.os }}_${{ matrix.config.arch }}
+        path: ${{ env.PROJECT_NAME }}_${{ github.ref_name }}_${{ matrix.config.os }}_${{ matrix.config.arch }}.tar.gz
+
+  sign-and-notarize-macos:
+    name: sign and notarize (macOS, 64bit)
+    runs-on: macos-latest 
+    needs: build
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout repository 
+        uses: actions/checkout@v4
+
+      - name: Set up temporary directory for notarization
+        run: mkdir -p ${{ env.DIST_DIR }}/notarize_temp
+
+      - name: Download macOS artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ env.ARTIFACT_NAME }}_macOS_64bit 
+          path: ${{ env.DIST_DIR }}/notarize_temp
+
+      - name: Extract macOS binary
+        working-directory: ${{ env.DIST_DIR }}/notarize_temp
+        run: tar -xzvf ${{ env.PROJECT_NAME }}_${{ github.ref_name }}_macOS_64bit.tar.gz
+
+      - name: Import Code-Signing Certificates
+        env:
+          KEYCHAIN: "build.keychain" 
+          INSTALLER_CERT_MAC_PATH: "/tmp/signing_cert.p12"
+          KEYCHAIN_PASSWORD: "keychainpassword" # Arbitrary, as it's temporary
+        run: |
+          echo "${{ secrets.INSTALLER_CERT_MAC_P12 }}" | base64 --decode > "${{ env.INSTALLER_CERT_MAC_PATH }}"
+          security create-keychain -p "${{ env.KEYCHAIN_PASSWORD }}" "${{ env.KEYCHAIN }}"
+          security default-keychain -s "${{ env.KEYCHAIN }}"
+          security unlock-keychain -p "${{ env.KEYCHAIN_PASSWORD }}" "${{ env.KEYCHAIN }}"
+          security import \
+            "${{ env.INSTALLER_CERT_MAC_PATH }}" \
+            -k "${{ env.KEYCHAIN }}" \
+            -f pkcs12 \
+            -A \
+            -T "/usr/bin/codesign" \
+            -P "${{ secrets.INSTALLER_CERT_MAC_PASSWORD }}"
+          security set-key-partition-list \
+            -S apple-tool:,apple: \
+            -s \
+            -k "${{ env.KEYCHAIN_PASSWORD }}" \
+            "${{ env.KEYCHAIN }}"
+
+      - name: Install gon for code signing and app notarization
+        run: |
+          wget -q https://github.com/Bearer/gon/releases/download/v0.0.27/gon_macos.zip 
+          unzip -q gon_macos.zip -d /usr/local/bin
+
+      - name: Sign and notarize binary
+        env:
+          AC_USERNAME: ${{ secrets.AC_USERNAME }}
+          AC_PASSWORD: ${{ secrets.AC_PASSWORD }}
+          AC_PROVIDER: ${{ secrets.AC_PROVIDER }} # May not be needed
+        working-directory: ${{ env.DIST_DIR }}/notarize_temp 
+        run: |
+          cp ../../gon.config.hcl .
+          gon gon.config.hcl
+
+      - name: Re-package notarized binary
+        working-directory: ${{ env.DIST_DIR }}/notarize_temp
+        run: |
+          chmod +x qdl
+          tar -czvf ${{ env.PROJECT_NAME }}_${{ github.ref_name }}_macOS_64bit.tar.gz qdl
+          mv ${{ env.PROJECT_NAME }}_${{ github.ref_name }}_macOS_64bit.tar.gz ../
+
+      - name: Upload notarized macOS artifact
+        uses: actions/upload-artifact@v4
+        with:
+          if-no-files-found: error
+          name: ${{ env.ARTIFACT_NAME }}_macOS_64bit 
+          path: ${{ env.DIST_DIR }}/${{ env.PROJECT_NAME }}_${{ github.ref_name }}_macOS_64bit.tar.gz
+          overwrite: true # Important: replace the original macOS artifact
+
+  create-release:
+    needs: [build, sign-and-notarize-macos]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Download artifact
+        uses: actions/download-artifact@v4
+        with:
+          pattern: ${{ env.ARTIFACT_NAME }}*
+          path: ${{ env.DIST_DIR }}
+          merge-multiple: true 
+
+      - name: Create Github Release and upload artifacts
+        uses: ncipollo/release-action@v1
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          draft: false
+          artifacts: "${{ env.DIST_DIR }}/*"
