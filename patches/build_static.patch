@@ -1,5 +1,5 @@
 diff --git a/Makefile b/Makefile
-index 203cb04..4482eb8 100644
+index ddd06c9..bef69c4 100644
 --- a/Makefile
 +++ b/Makefile
 @@ -3,7 +3,7 @@ RAMDUMP := qdl-ramdump
@@ -8,6 +8,6 @@ index 203cb04..4482eb8 100644
  CFLAGS += -O2 -Wall -g `pkg-config --cflags libxml-2.0 libusb-1.0`
 -LDFLAGS += `pkg-config --libs libxml-2.0 libusb-1.0`
 +LDFLAGS += `pkg-config --libs libxml-2.0 libusb-1.0 --static`
- prefix := /usr/local
- 
- QDL_SRCS := firehose.c io.c qdl.c sahara.c util.c patch.c program.c read.c sim.c ufs.c usb.c ux.c oscompat.c
+ ifeq ($(OS),Windows_NT)
+ LDFLAGS += -lws2_32
+ endif
