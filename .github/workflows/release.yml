@@ -3,7 +3,7 @@ name: release
 env:
   PROJECT_NAME: qdl
   REPO_NAME: linux-msm/qdl
-  REPO_REF: 672abb1e81cc630640f2a88e42b6dfd2a429ad14
+  REPO_REF: cd3272350328185b1d4f7de08fdecf38f8fd31be
   DIST_DIR: dist
   ARTIFACT_NAME: dist
 
