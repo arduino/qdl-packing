@@ -218,7 +218,7 @@ jobs:
         working-directory: ${{ env.DIST_DIR }}/notarize_temp
         run: |
           chmod +x qdl
-          tar -czvf ${{ env.PROJECT_NAME }}_${{ env.REPO_REF }}-${{ github.run_number }}_${{ matrix.config.os }}_${{ matrix.config.arch }}.tar.gz qdl
+          tar -czvf ${{ env.PROJECT_NAME }}_${{ env.REPO_REF }}-${{ github.run_number }}_${{ matrix.config.os }}_${{ matrix.config.arch }}.tar.gz qdl LICENSE README.md
           mv ${{ env.PROJECT_NAME }}_${{ env.REPO_REF }}-${{ github.run_number }}_${{ matrix.config.os }}_${{ matrix.config.arch }}.tar.gz ../
 
       - name: Upload notarized macOS artifact
