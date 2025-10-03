@@ -144,7 +144,7 @@ jobs:
         path: ${{ env.PROJECT_NAME }}_${{ github.ref_name }}_${{ matrix.config.os }}_${{ matrix.config.arch }}.tar.gz
 
   sign-and-notarize-macos:
-    name: sign and notarize (macOS, 64bit)
+    name: sign and notarize macOS binaries
     runs-on: macos-latest 
     needs: [build, build-macos-arm64]
     strategy:
@@ -172,7 +172,7 @@ jobs:
 
       - name: Extract macOS binary
         working-directory: ${{ env.DIST_DIR }}/notarize_temp
-        run: tar -xzvf ${{ env.PROJECT_NAME }}_${{ github.ref_name }}_macOS_64bit.tar.gz
+        run: tar -xzvf ${{ env.PROJECT_NAME }}_${{ github.ref_name }}_${{ matrix.config.os }}_${{ matrix.config.arch }}.tar.gz
 
       - name: Import Code-Signing Certificates
         env:
