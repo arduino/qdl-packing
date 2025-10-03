@@ -10,11 +10,11 @@ env:
 on:
   push:
     tags:
-      - '*.*.*'
+      - '*'
 
 jobs:
   build:
-    name: build (${{ matrix.config.os }}, ${{ matrix.config.arch }})
+    name: build
     runs-on:
       ubuntu-latest
     permissions:
@@ -82,7 +82,7 @@ jobs:
         path: ${{ env.PROJECT_NAME }}_${{ github.ref_name }}_${{ matrix.config.os }}_${{ matrix.config.arch }}.tar.gz
 
   build-macos-arm64:
-    name: build macOS arm64 
+    name: build
     permissions:
       contents: read
     strategy:
@@ -144,7 +144,7 @@ jobs:
         path: ${{ env.PROJECT_NAME }}_${{ github.ref_name }}_${{ matrix.config.os }}_${{ matrix.config.arch }}.tar.gz
 
   sign-and-notarize-macos:
-    name: sign and notarize macOS binaries
+    name: sign and notarize
     runs-on: macos-latest 
     needs: [build, build-macos-arm64]
     strategy:
