@@ -94,6 +94,10 @@ jobs:
     env:
       CROSSBUILD_REF: support-macos-arm64
     steps:
+    - name: Install dependencies
+      run: |
+        brew install pkg-config autoconf automake libtool
+
     - name: Checkout repository
       uses: actions/checkout@v4
       with:
