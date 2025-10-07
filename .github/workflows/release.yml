@@ -93,7 +93,7 @@ jobs:
             arch: arm64
     runs-on: macos-latest
     env:
-      CROSSBUILD_REF: support-macos-arm64
+      CROSSBUILD_REF: main
     steps:
     - name: Install dependencies
       run: |
