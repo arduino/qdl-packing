@@ -9,9 +9,6 @@ env:
 
 on:
   workflow_dispatch:
-  push:
-    tags:
-      - '*'
 
 jobs:
   build:
@@ -19,7 +16,7 @@ jobs:
     runs-on:
       ubuntu-latest
     permissions:
-      contents: read 
+      contents: read
     strategy:
       matrix:
         config:
@@ -241,6 +238,15 @@ jobs:
           pattern: ${{ env.ARTIFACT_NAME }}*
           path: ${{ env.DIST_DIR }}
           merge-multiple: true 
+
+      - name: Tag release to bind tag and commit
+        env:
+          TAG: ${{ env.REPO_REF }}-${{ github.run_number }}
+        run: |
+          git config --global user.email "arduinobot@arduino.cc"
+          git config --global user.name "ArduinoBot"
+          git tag ${{ env.TAG }} -m "${{ env.TAG }}"
+          git push origin ${{ env.TAG }}
 
       - name: Create Github Release and upload artifacts
         uses: ncipollo/release-action@v1
