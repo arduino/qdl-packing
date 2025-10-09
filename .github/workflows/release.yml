@@ -239,7 +239,11 @@ jobs:
           path: ${{ env.DIST_DIR }}
           merge-multiple: true 
 
-      - name: Tag release to bind tag and commit
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Create a tag for the release
         env:
           TAG: ${{ env.REPO_REF }}-${{ github.run_number }}
         run: |
