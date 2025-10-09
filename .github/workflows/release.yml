@@ -257,4 +257,7 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           draft: false
+          prerelease: true
           artifacts: "${{ env.DIST_DIR }}/*"
+          tag: ${{ env.REPO_REF }}-${{ github.run_number }}
+
