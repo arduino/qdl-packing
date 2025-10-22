@@ -177,7 +177,7 @@ jobs:
         env:
           KEYCHAIN: "build.keychain" 
           INSTALLER_CERT_MAC_PATH: "/tmp/signing_cert.p12"
-          KEYCHAIN_PASSWORD: "keychainpassword" # Arbitrary, as it's temporary
+          KEYCHAIN_PASSWORD: "keychainpassword" # Arbitrary password for a keychain that exists only for the duration of the job, so not secret
         run: |
           echo "${{ secrets.INSTALLER_CERT_MAC_P12 }}" | base64 --decode > "${{ env.INSTALLER_CERT_MAC_PATH }}"
           security create-keychain -p "${{ env.KEYCHAIN_PASSWORD }}" "${{ env.KEYCHAIN }}"
