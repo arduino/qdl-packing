@@ -2,8 +2,8 @@ name: release
 
 env:
   PROJECT_NAME: qdl
-  REPO_NAME: linux-msm/qdl
-  REPO_REF: v2.2
+  REPO_NAME: lucarin91/qdl
+  REPO_REF: add-list-command
   DIST_DIR: dist
   ARTIFACT_NAME: dist
 
