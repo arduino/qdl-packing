@@ -2,8 +2,8 @@ name: release
 
 env:
   PROJECT_NAME: qdl
-  REPO_NAME: linux-msm/qdl
-  REPO_REF: v2.4
+  REPO_NAME: quic-bjorande/qdl
+  REPO_REF: for-linux-msm/programmer-absolute-path-windows-fix
   DIST_DIR: dist
   ARTIFACT_NAME: dist
 
