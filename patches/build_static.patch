@@ -1,13 +1,13 @@
-diff --git a/Makefile b/Makefile
-index a8fb0da..39c9cc5 100644
+ diff --git a/Makefile b/Makefile
+index 0256010..7dcbd90 100644
 --- a/Makefile
 +++ b/Makefile
-@@ -3,7 +3,7 @@ RAMDUMP := qdl-ramdump
- VERSION := $(or $(VERSION), $(shell git describe --dirty --always --tags 2>/dev/null), "unknown-version")
- 
- CFLAGS += -O2 -Wall -g `pkg-config --cflags libxml-2.0 libusb-1.0`
--LDFLAGS += `pkg-config --libs libxml-2.0 libusb-1.0`
-+LDFLAGS += `pkg-config --libs libxml-2.0 libusb-1.0 --static`
+@@ -4,7 +4,7 @@ VERSION := $(or $(VERSION), $(shell git describe --dirty --always --tags 2>/dev/
+
+ PKG_CONFIG ?= pkg-config
+ CFLAGS += -O2 -Wall -g `$(PKG_CONFIG) --cflags libxml-2.0 libusb-1.0`
+-LDFLAGS += `$(PKG_CONFIG) --libs libxml-2.0 libusb-1.0`
++LDFLAGS += `$(PKG_CONFIG) --libs libxml-2.0 libusb-1.0 --static`
  ifeq ($(OS),Windows_NT)
  LDFLAGS += -lws2_32
  endif
