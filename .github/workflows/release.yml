@@ -3,7 +3,7 @@ name: release
 env:
   PROJECT_NAME: qdl
   REPO_NAME: linux-msm/qdl
-  REPO_REF: v2.5
+  REPO_REF: v2.6
   DIST_DIR: dist
   ARTIFACT_NAME: dist
 
@@ -13,8 +13,7 @@ on:
 jobs:
   build:
     name: build
-    runs-on:
-      ubuntu-latest
+    runs-on: ubuntu-latest
     permissions:
       contents: read
     strategy:
@@ -42,42 +41,42 @@ jobs:
 
     container:
       image: ghcr.io/arduino/crossbuild:0.3.0-pre.1
-    
+
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
-      with:
-        path: packing
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          path: packing
 
-    - name: Checkout linux-msm/qdl repository
-      uses: actions/checkout@v4
-      with:
-        repository: ${{ env.REPO_NAME }}
-        ref: ${{ env.REPO_REF }}
-        path: ${{ env.PROJECT_NAME }}
+      - name: Checkout linux-msm/qdl repository
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ env.REPO_NAME }}
+          ref: ${{ env.REPO_REF }}
+          path: ${{ env.PROJECT_NAME }}
 
-    - name: Apply patches
-      working-directory: ${{ env.PROJECT_NAME }}
-      run: git apply -v ../packing/patches/*.patch
+      - name: Apply patches
+        working-directory: ${{ env.PROJECT_NAME }}
+        run: git apply -v ../packing/patches/*.patch
 
-    - name: Build
-      working-directory: ${{ env.PROJECT_NAME }}
-      run: /configure_toolchain.sh make -j$(nproc)
-      env:
-        CROSS_COMPILE: ${{ matrix.config.cross_compile }}
+      - name: Build
+        working-directory: ${{ env.PROJECT_NAME }}
+        run: /configure_toolchain.sh make -j$(nproc)
+        env:
+          CROSS_COMPILE: ${{ matrix.config.cross_compile }}
 
-    - name: Package
-      working-directory: ${{ env.PROJECT_NAME }}
-      run: | 
-        tar -czvf ../${{ env.PROJECT_NAME }}_${{ env.REPO_REF }}-${{ github.run_number }}_${{ matrix.config.os }}_${{ matrix.config.arch }}.tar.gz \
-                  qdl${{ matrix.config.extension }} LICENSE README.md
+      - name: Package
+        working-directory: ${{ env.PROJECT_NAME }}
+        run: |
+          tar -czvf ../${{ env.PROJECT_NAME }}_${{ env.REPO_REF }}-${{ github.run_number }}_${{ matrix.config.os }}_${{ matrix.config.arch }}.tar.gz \
+                    qdl${{ matrix.config.extension }} LICENSE README.md
 
-    - name: Upload artifacts
-      uses: actions/upload-artifact@v4
-      with:
-        if-no-files-found: error
-        name: ${{ env.ARTIFACT_NAME }}_${{ matrix.config.os }}_${{ matrix.config.arch }}
-        path: ${{ env.PROJECT_NAME }}_${{ env.REPO_REF }}-${{ github.run_number }}_${{ matrix.config.os }}_${{ matrix.config.arch }}.tar.gz
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          if-no-files-found: error
+          name: ${{ env.ARTIFACT_NAME }}_${{ matrix.config.os }}_${{ matrix.config.arch }}
+          path: ${{ env.PROJECT_NAME }}_${{ env.REPO_REF }}-${{ github.run_number }}_${{ matrix.config.os }}_${{ matrix.config.arch }}.tar.gz
 
   build-macos-arm64:
     name: build
@@ -92,59 +91,59 @@ jobs:
     env:
       CROSSBUILD_REF: main
     steps:
-    - name: Install dependencies
-      run: |
-        brew install pkg-config autoconf automake libtool
+      - name: Install dependencies
+        run: |
+          brew install pkg-config autoconf automake libtool
 
-    - name: Checkout repository
-      uses: actions/checkout@v4
-      with:
-        path: packing
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          path: packing
 
-    - name: Checkout arduino/crossbuild repository
-      uses: actions/checkout@v4
-      with:
-        repository: arduino/crossbuild 
-        ref: ${{ env.CROSSBUILD_REF }}
-        path: crossbuild
-    - name: build dependencies
-      working-directory: crossbuild
-      run: ./scripts/build_mac.sh
+      - name: Checkout arduino/crossbuild repository
+        uses: actions/checkout@v4
+        with:
+          repository: arduino/crossbuild
+          ref: ${{ env.CROSSBUILD_REF }}
+          path: crossbuild
+      - name: build dependencies
+        working-directory: crossbuild
+        run: ./scripts/build_mac.sh
 
-    - name: Checkout linux-msm/qdl repository
-      uses: actions/checkout@v4
-      with:
-        repository: ${{ env.REPO_NAME }}
-        ref: ${{ env.REPO_REF }}
-        path: ${{ env.PROJECT_NAME }}
-    - name: Apply patches
-      working-directory: ${{ env.PROJECT_NAME }}
-      run: git apply -v ../packing/patches/*.patch
+      - name: Checkout linux-msm/qdl repository
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ env.REPO_NAME }}
+          ref: ${{ env.REPO_REF }}
+          path: ${{ env.PROJECT_NAME }}
+      - name: Apply patches
+        working-directory: ${{ env.PROJECT_NAME }}
+        run: git apply -v ../packing/patches/*.patch
 
-    - name: build qdl
-      working-directory: ${{ env.PROJECT_NAME }}
-      run: make -j 8
-      env:
-        PKG_CONFIG_PATH: ../crossbuild/build/macos/dist/lib/pkgconfig
-        LD_LIBRARY_PATH: ../crossbuild/build/macos/dist/lib
-        C_INCLUDE_PATH: ../crossbuild/build/macos/dist/include  
+      - name: build qdl
+        working-directory: ${{ env.PROJECT_NAME }}
+        run: make -j 8
+        env:
+          PKG_CONFIG_PATH: ../crossbuild/build/macos/dist/lib/pkgconfig
+          LD_LIBRARY_PATH: ../crossbuild/build/macos/dist/lib
+          C_INCLUDE_PATH: ../crossbuild/build/macos/dist/include
 
-    - name: Package
-      working-directory: ${{ env.PROJECT_NAME }}
-      run: | 
-        tar -czvf ../${{ env.PROJECT_NAME }}_${{ env.REPO_REF }}-${{ github.run_number }}_${{ matrix.config.os }}_${{ matrix.config.arch }}.tar.gz \
-                  qdl LICENSE README.md
+      - name: Package
+        working-directory: ${{ env.PROJECT_NAME }}
+        run: |
+          tar -czvf ../${{ env.PROJECT_NAME }}_${{ env.REPO_REF }}-${{ github.run_number }}_${{ matrix.config.os }}_${{ matrix.config.arch }}.tar.gz \
+                    qdl LICENSE README.md
 
-    - name: Upload artifacts
-      uses: actions/upload-artifact@v4
-      with:
-        if-no-files-found: error
-        name: ${{ env.ARTIFACT_NAME }}_${{ matrix.config.os }}_${{ matrix.config.arch }}
-        path: ${{ env.PROJECT_NAME }}_${{ env.REPO_REF }}-${{ github.run_number }}_${{ matrix.config.os }}_${{ matrix.config.arch }}.tar.gz
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          if-no-files-found: error
+          name: ${{ env.ARTIFACT_NAME }}_${{ matrix.config.os }}_${{ matrix.config.arch }}
+          path: ${{ env.PROJECT_NAME }}_${{ env.REPO_REF }}-${{ github.run_number }}_${{ matrix.config.os }}_${{ matrix.config.arch }}.tar.gz
 
   sign-and-notarize-macos:
     name: sign and notarize
-    runs-on: macos-latest 
+    runs-on: macos-latest
     needs: [build, build-macos-arm64]
     strategy:
       matrix:
@@ -157,7 +156,7 @@ jobs:
       contents: read
 
     steps:
-      - name: Checkout repository 
+      - name: Checkout repository
         uses: actions/checkout@v4
 
       - name: Set up temporary directory for notarization
@@ -175,7 +174,7 @@ jobs:
 
       - name: Import Code-Signing Certificates
         env:
-          KEYCHAIN: "build.keychain" 
+          KEYCHAIN: "build.keychain"
           INSTALLER_CERT_MAC_PATH: "/tmp/signing_cert.p12"
           KEYCHAIN_PASSWORD: "keychainpassword" # Arbitrary password for a keychain that exists only for the duration of the job, so not secret
         run: |
@@ -206,7 +205,7 @@ jobs:
           AC_USERNAME: ${{ secrets.AC_USERNAME }}
           AC_PASSWORD: ${{ secrets.AC_PASSWORD }}
           AC_PROVIDER: ${{ secrets.AC_PROVIDER }} # May not be needed
-        working-directory: ${{ env.DIST_DIR }}/notarize_temp 
+        working-directory: ${{ env.DIST_DIR }}/notarize_temp
         run: |
           cp ../../gon.config.hcl .
           gon gon.config.hcl
@@ -242,7 +241,7 @@ jobs:
         with:
           pattern: ${{ env.ARTIFACT_NAME }}*
           path: ${{ env.DIST_DIR }}
-          merge-multiple: true 
+          merge-multiple: true
 
       - name: Create a tag for the release
         env:
@@ -261,4 +260,3 @@ jobs:
           prerelease: true
           artifacts: "${{ env.DIST_DIR }}/*"
           tag: ${{ env.REPO_REF }}-${{ github.run_number }}
-
